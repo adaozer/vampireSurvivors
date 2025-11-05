@@ -3,6 +3,7 @@
 #include "GamesEngineeringBase.h"
 #include "Camera.h"
 #include "Helper.h"
+#include "World.h"
 
 int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
@@ -16,6 +17,9 @@ int main() {
     EnemyManager em;
     Camera cam(0, 0);
 
+    TileSet tiles("Resources/");
+    World w;
+    
     while (running)
     {
         canvas.checkInput();
@@ -40,6 +44,9 @@ int main() {
 
         p.update(dt, x, y);
         cam.center(p.getX(), p.getY(), canvas);
+        
+        w.draw(canvas, cam, tiles);
+
         p.autoAttack(em.enemyarr, em.rangedarr);
         p.updateBullets(dt, canvas, cam);
         p.checkBulletEnemyCollision(em.enemyarr, em.rangedarr);

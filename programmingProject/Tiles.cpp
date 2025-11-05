@@ -20,7 +20,7 @@ int Tile::getHeight() { return image.height; }
 int Tile::getWidth() { return image.width; }
 GamesEngineeringBase::Image& Tile::getSprite() { return image; }
 
-TileSet::TileSet(std::string pre = "") {
+TileSet::TileSet(std::string pre) {
 	for (unsigned int i = 0; i < tileNum; i++) {
 		std::string filename;
 		filename = "Resources/" + pre + std::to_string(i) + ".png";

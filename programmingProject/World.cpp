@@ -7,30 +7,122 @@ World::World() {
 		}
 }
 
-bool World::loadUsingFile(std::string& filename) {
-	std::ifstream f(filename);
-	int w = 0, h = 0, tw = -1, th = -1;
-	bool inLayer = false;
-	int rowsRead = 0;
+bool World::loadUsingFile(const std::string& filename)
+{
+    std::ifstream f(filename);
+    if (!f.good()) return false;
 
-	std::string line;
-	while (std::getline(f, line)) {
-		if (isEmpty(line)) continue;
+    int W = -1, H = -1, tw = -1, th = -1;
+    bool inLayer = false;
+    unsigned rowsRead = 0;
 
-		if (!inLayer) {
-			if (startsWithKey(line, "tileswide")) { std::istringstream iss(line); std::string k; iss >> k >> W;  continue; }
-			if (startsWithKey(line, "tileshigh")) { std::istringstream iss(line); std::string k; iss >> k >> H;  continue; }
-			if (startsWithKey(line, "tilewidth")) { std::istringstream iss(line); std::string k; iss >> k >> tw; continue; }
-			if (startsWithKey(line, "tileheight")) { std::istringstream iss(line); std::string k; iss >> k >> th; continue; }
-			if (startsWithKey(line, "layer")) {
-			}
-		}
-	}
+    std::string line;
+    while (std::getline(f, line)) {
+        if (isEmpty(line)) continue;
+
+        if (!inLayer) {
+            std::string s = clearSpaces(line);
+
+            if (firstWord(s, "tileswide")) {
+                std::istringstream iss(s);
+                std::string key; iss >> key >> W;
+                continue;
+            }
+            if (firstWord(s, "tileshigh")) {
+                std::istringstream iss(s);
+                std::string key; iss >> key >> H;
+                continue;
+            }
+            if (firstWord(s, "tilewidth")) {
+                std::istringstream iss(s);
+                std::string key; iss >> key >> tw;
+                continue;
+            }
+            if (firstWord(s, "tileheight")) {
+                std::istringstream iss(s);
+                std::string key; iss >> key >> th;
+                continue;
+            }
+            if (firstWord(s, "layer")) {
+                // Sanity checks before reading grid
+                if (W <= 0 || H <= 0) return false;
+                if (W > static_cast<int>(worldMaxW) || H > static_cast<int>(worldMaxH)) return false;
+                if (tw <= 0 || th <= 0) return false;
+
+                tileswide = W;
+                tileshigh = H;
+                tilewidth = tw;
+                tileheight = th;
+
+                inLayer = true;
+                rowsRead = 0;
+                continue;
+            }
+
+            continue;
+        }
+
+        // Layer phase: read exactly `height` rows with exactly `width` ints each.
+        if (rowsRead >= tileshigh) break;
+
+        int vals[worldMaxW];
+        if (!parseCSV(line, vals, static_cast<int>(tileswide))) {
+            // Allow blank/comment lines inside the layer (skip), else fail
+            if (isEmpty(line)) continue;
+            return false;
+        }
+
+        // Clamp to valid tile ID range [0, tileNum-1]
+        for (unsigned x = 0; x < tileswide; ++x) {
+            int v = vals[x];
+            if (v < 0) v = 0;
+            if (v >= static_cast<int>(tileNum)) v = static_cast<int>(tileNum) - 1;
+            map[rowsRead][x] = v;
+        }
+        ++rowsRead;
+    }
+
+    // Success only if we actually entered layer data and read all rows.
+    return (inLayer && rowsRead == tileshigh);
 }
 
-void World::draw(GamesEngineeringBase::Window& canvas, const Camera& cam, TileSet& tiles) {
-	
+void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tiles)
+{
+    if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return;
+
+    const int camX = (int)cam.getX();
+    const int camY = (int)cam.getY();
+    const int screenW = (int)canvas.getWidth();
+    const int screenH = (int)canvas.getHeight();
+
+    // start with truncating division
+    int minTileX = camX / tilewidth;
+    int minTileY = camY / tileheight;
+
+    // adjust for negatives to emulate floor division
+    if (camX < 0 && (camX % tilewidth))  --minTileX;
+    if (camY < 0 && (camY % tileheight)) --minTileY;
+
+    // ceil for the far edge
+    int maxTileX = (camX + screenW + tilewidth - 1) / tilewidth;
+    int maxTileY = (camY + screenH + tileheight - 1) / tileheight;
+
+    // clamp to map bounds
+    if (minTileX < 0) minTileX = 0;
+    if (minTileY < 0) minTileY = 0;
+    if (maxTileX > tileswide)  maxTileX = tileswide;
+    if (maxTileY > tileshigh)  maxTileY = tileshigh;
+
+    for (int ty = minTileY; ty < maxTileY; ++ty) {
+        for (int tx = minTileX; tx < maxTileX; ++tx) {
+            const int id = map[ty][tx];
+            const int worldX = tx * tilewidth;
+            const int worldY = ty * tileheight;
+            tiles[(unsigned)id].draw(canvas, worldX, worldY, cam);
+        }
+    }
 }
+
 
 int World::getTilesWidth() { return tileswide; }
 int World::getTilesHeight() { return tileshigh; }
