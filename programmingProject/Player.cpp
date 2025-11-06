@@ -47,7 +47,7 @@ int Player::findNearestEnemyIndex(Melee** enemies, Ranged** renemies, bool& pick
     return closestIndex;
 }
 
-void Player::autoAttack(Melee** enemies, Ranged** renemies) { // Player's default (automatic) attack function
+void Player::autoAttack(Melee** enemies, Ranged** renemies, Camera& cam, GamesEngineeringBase::Window &canvas) { // Player's default (automatic) attack function
     bool pickRanged = false;
     int i = findNearestEnemyIndex(enemies, renemies, pickRanged); // Find the nearest enemy using the helper function
     if (i == -1) return;
@@ -72,10 +72,10 @@ void Player::autoAttack(Melee** enemies, Ranged** renemies) { // Player's defaul
         targetH = e->image.height;
     } // Get the X, Y, W, H values of the enemy. We use pickRanged to find out which array we need to parse.
 
-    if (towardX > posX + 512 || towardX < posX - 512 || towardY < posY - 384 || towardY > posY + 384) return; // If the enemy is not on screen, don't shoot
+    if (!onScreen(towardX, towardY, targetW, targetH, cam, canvas)) return; // If the enemy is not on screen, don't shoot
 
     float currentSpeed = shootSpeed; // Seperate variable so we don't override shootSpeed
-    if (powerup) currentSpeed = 0.5f; // Shoot faster if theres powerup active
+    if (powerup) currentSpeed = 0.25f; // Shoot faster if theres powerup active
     if (timeElapsed < currentSpeed) return;
 
     for (int i = 0; i < bulletSize; i++) {
@@ -255,7 +255,18 @@ void Player::castAOE(Melee** enemies, Ranged** renemies, int N, Camera& cam, Gam
     aoeCDTim = aoeCD;
 }
 
-void Player::update(float dt, int x, int y) {
+void Player::playerMovement(int x, int y, World& w) {
+    posX += x;
+    posY += y;
+
+    if (posX < 0) posX = 0;
+    if (posY < 0) posY = 0;
+    if (posX + image.width > w.getWorldWidth()) posX = w.getWorldWidth() - image.width;
+    if (posY + image.height > w.getWorldHeight()) posY = w.getWorldHeight() - image.height;
+}
+
+
+void Player::update(float dt, int x, int y, World& w) {
     timeElapsed += dt; // Update auto attack cooldown
 
     if (powerup) { // Update the duration of the active powerup
@@ -288,7 +299,8 @@ void Player::update(float dt, int x, int y) {
 
     float newX = x * dt * 60.f;
     float newY = y * dt * 60.f;
-    updatePos(newX, newY); // Move the player
+
+    playerMovement(newX, newY, w); // Move the player
 
 }
 

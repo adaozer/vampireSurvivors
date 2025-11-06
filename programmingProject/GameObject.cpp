@@ -1,9 +1,9 @@
 #include "GameObject.h"
-
+#include <iostream>
 
 GameObject::GameObject(float _posX, float _posY, std::string filename) : posX(_posX), posY(_posY) {
-        image.load(filename);
-    }
+    image.load(filename);
+}
 
 GameObject::GameObject(float _posX, float _posY) : posX(_posX), posY(_posY) {}
 

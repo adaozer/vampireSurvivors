@@ -37,7 +37,7 @@ Position EnemyManager::determineEnemyPos(Player& p) {
     return positions;
 }
 
-void EnemyManager::spawnEnemy(GamesEngineeringBase::Window& canvas, Player& p) {
+void EnemyManager::spawnEnemy(GamesEngineeringBase::Window& canvas, Player& p, World& w) {
     if (timeElapsed <= createThreshold) return;
     Position pos = determineEnemyPos(p);
     int posX = pos.x;
@@ -60,30 +60,35 @@ void EnemyManager::spawnEnemy(GamesEngineeringBase::Window& canvas, Player& p) {
     }
     if (emptySlot == -1) return;
     switch (enemyType) {
-        case 0:
-            enemyarr[emptySlot] = new Melee(posX, posY, "Resources/5.png", 1, 4, 3);
+    case 0:
+        enemyarr[emptySlot] = new Melee(posX, posY, "Resources/enemy1.png", 10, 4, 3);
+        break;
+    case 1:
+        enemyarr[emptySlot] = new Melee(posX, posY, "Resources/enemy2.png", 15, 2, 6);
+        break;
+    case 2:
+        enemyarr[emptySlot] = new Melee(posX, posY, "Resources/enemy3.png", 25, 3, 10);
+        break;
+    case 3:
+        enemyarr[emptySlot] = new Melee(posX, posY, "Resources/enemy4.png", 50, 1, 15);
+        break;
+    case 4:
+        while (!w.inBounds(posX, posY)) {
+            Position newPos = determineEnemyPos(p);
+            posX = newPos.x;
+            posY = newPos.y;
+        }
+            rangedarr[emptySlot] = new Ranged(posX, posY, "Resources/rangedEnemy.png", 10, 0, 25);
             break;
-        case 1:
-            enemyarr[emptySlot] = new Melee(posX, posY, "Resources/7.png", 1, 2, 6);
-            break;
-        case 2:
-            enemyarr[emptySlot] = new Melee(posX, posY, "Resources/14.png", 1, 1, 10);
-            break;
-        case 3:
-            enemyarr[emptySlot] = new Melee(posX, posY, "Resources/22.png", 10, 5, 15);
-            break;
-        case 4:
-            rangedarr[emptySlot] = new Ranged(posX, posY, "Resources/12.png", 10, 0, 10);
-            break;
+        }
+        timeElapsed = 0.f;
+        createThreshold -= 0.1f;
+        createThreshold = max(createThreshold, 0.35f);
     }
-    timeElapsed = 0.f;
-    createThreshold -= 0.1f;
-    createThreshold = max(createThreshold, 0.35f);
-}
 
-void EnemyManager::update(GamesEngineeringBase::Window& canvas, float dt, Player& p, Camera& cam) {
+void EnemyManager::update(GamesEngineeringBase::Window& canvas, float dt, Player& p, Camera& cam, World& w) {
     timeElapsed += dt;
-    spawnEnemy(canvas, p);
+    spawnEnemy(canvas, p, w);
 
     for (unsigned int i = 0; i < enemySize; ++i) {
         Melee* e = enemyarr[i];

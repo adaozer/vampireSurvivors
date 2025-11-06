@@ -1,5 +1,6 @@
 #pragma once
 #include "Helper.h"
+#include "World.h"
 
 class Player;
 class Melee;
@@ -15,6 +16,6 @@ public:
 
     EnemyManager();
     Position determineEnemyPos(Player& p);
-    void spawnEnemy(GamesEngineeringBase::Window& canvas, Player& p);
-    void update(GamesEngineeringBase::Window& canvas, float dt, Player& p, Camera& cam);
+    void spawnEnemy(GamesEngineeringBase::Window& canvas, Player& p, World& w);
+    void update(GamesEngineeringBase::Window& canvas, float dt, Player& p, Camera& cam, World& w);
 };

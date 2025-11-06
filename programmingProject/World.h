@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+class Camera;
+
 class World {
 public:
     int map[worldMaxH][worldMaxW];
@@ -13,6 +15,14 @@ public:
     bool loadUsingFile(const std::string& filename);
 
     void draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tiles);
+
+    int getWorldWidth();
+    int getWorldHeight();
+
+    bool inBoundsIndex(int tx, int ty);
+    bool inBounds(int x, int y);
+    int tileOperator(int tx, int ty);
+
 };
 
 

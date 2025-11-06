@@ -1,4 +1,5 @@
 #include "Tiles.h"
+#include "Camera.h"
 #include <iostream>
 
 Tile::Tile() {}

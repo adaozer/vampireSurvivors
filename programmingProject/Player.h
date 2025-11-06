@@ -3,6 +3,8 @@
 #include "Camera.h"
 #include "Character.h"
 #include "Helper.h"
+#include "World.h"
+
 
 class Bullet;
 class Melee;
@@ -13,17 +15,17 @@ public:
     float timeElapsed = 0.f; // To check if enough time has passed to shoot a bullet
     Bullet* barr[bulletSize]; // Bullet array we'll use to store our bullets we shoot with auto attack
 
-    float shootSpeed = 1.f; // How often the player shoots
+    float shootSpeed = 0.5f; // How often the player shoots
     float powerupTime = 0.f; // To track how long the powerup has been active
     bool invul = false; // To check if the player is invulnerable (used after getting hit for a brief moment)
     float invulTime = 0.f; // To track how long the player has been invulnerable
 
     bool powerup = false; // Check if powerup is active
-    float powerupCD = 20.f; // Cooldown of the powerup so its not spammed
+    float powerupCD = 25.f; // Cooldown of the powerup so its not spammed
     float powerupCDTim = 0.f; // Check how long the powerup has been on cooldown
     float powerupLength = 10.f; // To set powerup time to later
 
-    float aoeCD = 10.f; // AOE Attack cooldown and timer to keep track
+    float aoeCD = 7.5f; // AOE Attack cooldown and timer to keep track
     float aoeCDTim = 0.f;
 
     Player(float _posX, float _posY, std::string filepath, int _health, int _speed, int _damage);
@@ -44,9 +46,11 @@ public:
 
     void castAOE(Melee** enemies, Ranged** renemies, int baseN, Camera& cam, GamesEngineeringBase::Window& canvas);
 
-    void autoAttack(Melee** enemies, Ranged** renemies);
+    void autoAttack(Melee** enemies, Ranged** renemies, Camera& cam, GamesEngineeringBase::Window& canvas);
 
     void checkBulletEnemyCollision(Melee** enemies, Ranged** ranged);
 
-    void update(float dt, int x, int y);
+    void playerMovement(int x, int y, World& w);
+
+    void update(float dt, int x, int y, World& w);
 };

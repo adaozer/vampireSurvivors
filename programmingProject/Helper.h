@@ -1,8 +1,9 @@
 #pragma once
-#include "Camera.h"
 #include <fstream>
 #include <sstream>
+#include "GamesEngineeringBase.h"
 
+class Camera;
 struct Position {
 	int x, y;
 };

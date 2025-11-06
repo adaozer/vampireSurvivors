@@ -1,4 +1,5 @@
 #include "World.h"
+#include "Camera.h"
 
 World::World() {
 	for (int y = 0; y < worldMaxH; y++)
@@ -145,4 +146,23 @@ void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& til
             tiles[(unsigned)id].draw(canvas, worldX, worldY, cam);
         }
     }
+}
+
+
+int World::getWorldWidth() { return tileswide * tilewidth; }
+int World::getWorldHeight() { return tileshigh * tileheight; }
+
+bool World::inBoundsIndex(int tx, int ty) {
+    if (tx >= 0 && ty >= 0 && tx < tileswide && ty < tileshigh) return true;
+    return false;
+}
+
+bool World::inBounds(int x, int y) {
+    if (x >= 0 && y >= 0 && x < getWorldWidth() && y < getWorldHeight()) return true;
+    return false;
+}
+
+int World::tileOperator(int tx, int ty) {
+    if (!inBoundsIndex(tx, ty)) return -1;
+    return map[ty][tx];
 }
