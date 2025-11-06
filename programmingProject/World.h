@@ -13,12 +13,6 @@ public:
     bool loadUsingFile(const std::string& filename);
 
     void draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tiles);
-
-    int getTilesWidth();
-    int getTilesHeight();
-
-    int getTileW();
-    int getTileH();
 };
 
 

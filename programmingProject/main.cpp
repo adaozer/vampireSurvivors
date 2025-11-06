@@ -24,10 +24,11 @@ int main() {
         return 1;
     }
 
-    std::cerr << "[Boot] tileswide=" << w.getTilesWidth()
-        << " tileshigh=" << w.getTilesHeight()
-        << " tileW=" << w.getTileW()
-        << " tileH=" << w.getTileH() << "\n";
+    std::cerr << "[Boot] tileswide=" << w.tileswide
+        << " tileshigh=" << w.tileshigh
+        << " tileW=" << w.tilewidth
+        << " tileH=" << w.tileheight << "\n";
+
     while (running)
     {
         canvas.checkInput();
@@ -68,5 +69,9 @@ int main() {
 
         canvas.present();
     }
+ /*   int restart;
+    std::cout << "Hello! Input 1 to restart!\n";
+    std::cin >> restart;
+    if (restart == 1) main();*/
     return 0;
 }

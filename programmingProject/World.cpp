@@ -146,10 +146,3 @@ void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& til
         }
     }
 }
-
-
-int World::getTilesWidth() { return tileswide; }
-int World::getTilesHeight() { return tileshigh; }
-
-int World::getTileH() { return tileheight; }
-int World::getTileW() { return tilewidth; }

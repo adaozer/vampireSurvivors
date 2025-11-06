@@ -39,11 +39,12 @@ bool firstWord(std::string& line, const char* word) {
 }
 
 bool parseCSV(std::string line, int* output, int tiles) {
-    for (char& c : line) if (c == ',') c = ' ';
+    for (char& c : line) 
+        if (c == ',') 
+            c = ' ';
     std::istringstream iss(line);
-    for (unsigned i = 0; i < tiles; ++i) {
+    for (unsigned i = 0; i < tiles; ++i)
         if (!(iss >> output[i])) return false;
-    }
     int dummy;
     if (iss >> dummy) return false;
     return true;
