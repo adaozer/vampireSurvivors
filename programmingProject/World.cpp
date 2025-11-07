@@ -8,8 +8,7 @@ World::World() {
 		}
 }
 
-bool World::loadUsingFile(const std::string& filename)
-{
+bool World::loadUsingFile(const std::string& filename) {
     std::ifstream f(filename);
     if (!f.good()) return false;
 
@@ -124,6 +123,41 @@ void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& til
     }
 }
 
+void World::buildCollisionLayer()
+{
+    for (int ty = 0; ty < tileshigh; ++ty) {
+        for (int tx = 0; tx < tileswide; ++tx) {
+            int id = map[ty][tx];
+
+            // Mark water tiles (IDs 14–22) as blocked
+            // You can change this range if your tileset differs
+            blockedCell[ty][tx] = (id >= 14 && id <= 22);
+        }
+    }
+}
+
+bool World::isWalkablePixel(int px, int py)
+{
+    if (!inBounds(px, py)) return false;
+
+    int tx = px / tilewidth;
+    int ty = py / tileheight;
+
+    if (tx < 0 || ty < 0 || tx >= tileswide || ty >= tileshigh)
+        return false;
+
+    // true means blocked, so we return the opposite
+    return !blockedCell[ty][tx];
+}
+
+bool World::isWalkableRect(int x, int y, int w, int h)
+{
+    // Check 4 corners of the player's bounding box
+    return isWalkablePixel(x, y) &&
+        isWalkablePixel(x + w - 1, y) &&
+        isWalkablePixel(x, y + h - 1) &&
+        isWalkablePixel(x + w - 1, y + h - 1);
+}
 
 int World::getWorldWidth() { return tileswide * tilewidth; }
 int World::getWorldHeight() { return tileshigh * tileheight; }

@@ -115,30 +115,32 @@ void Player::draw(GamesEngineeringBase::Window& canvas, Camera& cam) {
 }
 
 void Player::updateBullets(float dt, GamesEngineeringBase::Window& canvas, Camera& cam) {
+    // This parses the bullet array to run bullet update on each live bullet and draw them.
     for (unsigned int i = 0; i < bulletSize; ++i) {
         Bullet* b = barr[i];
         if (!b) continue;
-        b->update(dt, *this);
+        b->update(dt, *this, canvas, cam); // Update bullet
 
-        if (!b->alive) {
+        if (!b->alive) { // If the bullet isn't live, it deletes the bullet.
             delete b;
             barr[i] = nullptr;
             continue;
         }
-        b->draw(canvas, cam);
+        b->draw(canvas, cam); // Draw bullet
     }
 }
 
 void Player::checkBulletEnemyCollision(Melee** enemies, Ranged** ranged) {
+    // This function checks if a player bullet has hit an enemy.
     for (int i = 0; i < bulletSize; i++) {
         Bullet* b = barr[i];
         if (!b || !b->alive) continue;
-
+        // Parse the bullet array and get the radius x and y of the bullet so we can check collision
         int bcx = b->getX();
         int bcy = b->getY();
         int br = b->radius;
 
-        bool hit = false;
+        bool hit = false; // This flag is to see if we need to parse both arrays since we have a seperate melee and ranged array
         for (int j = 0; j < enemySize; j++) {
             Melee* e = enemies[j];
             if (!e || !e->isAlive()) continue;
@@ -146,19 +148,19 @@ void Player::checkBulletEnemyCollision(Melee** enemies, Ranged** ranged) {
             int ecx = e->getX() + e->image.width / 2;
             int ecy = e->getY() + e->image.height / 2;
             int er = e->image.width / 3;
-
+            // Also get the enemies x, y, radius info so we can check for collision
             if (circlesIntersect(bcx, bcy, br, ecx, ecy, er)) {
                 e->takeDamage(b->damage);
-                hit = true;
+                hit = true; // Hit = true, since the bullet will then disappear we don't need to parse ranged array
                 break;
             }
         }
 
-        if (!hit) {
+        if (!hit) { // If the bullet didn't hit a melee enemy, we also parse the ranged array
             for (int k = 0; k < enemySize; k++) {
                 Ranged* r = ranged[k];
                 if (!r || !r->isAlive()) continue;
-
+                 // Same procedure
                 int rcx = (int)r->getX() + r->image.width / 2;
                 int rcy = (int)r->getY() + r->image.height / 2;
                 int rr = r->image.width / 3;
@@ -171,7 +173,7 @@ void Player::checkBulletEnemyCollision(Melee** enemies, Ranged** ranged) {
             }
         }
 
-        if (hit) {
+        if (hit) { // If the bullet hit any enemy it gets deleted since its no longer active
             b->alive = false;
             delete b;
             barr[i] = nullptr;
@@ -181,6 +183,7 @@ void Player::checkBulletEnemyCollision(Melee** enemies, Ranged** ranged) {
 
 
 bool Player::alreadyPicked(Character* c, Character** charList, int arrSize) {
+    // The purpose of this function is to do "if i in list" like in python, to not have duplicates
     for (int i = 0; i < arrSize; ++i) {
         if (charList[i] == c) return true;
     }
@@ -190,13 +193,16 @@ bool Player::alreadyPicked(Character* c, Character** charList, int arrSize) {
 int Player::findTopNMaxHealth(Melee** enemies, int mCount, Ranged** renemies, int rCount, Character** charList, int N) {
     int arrSize = 0;
 
+    // Very simple function that parses both enemy arrays to find the highest health ones. A pointer to charList is passed to modify it and fill it here since we're turning the amount of elements inside
+    // First we parse melee then ranged and add the highest health one to the character array. We return array size to know how much to parse
+
     for (int i = 0; i < N; i++) {
         Character* best = nullptr;
         int highestHP = -1;
 
         for (int m = 0; m < mCount; m++) {
             Melee* e = enemies[m];
-            if (!e || !e->isAlive() || alreadyPicked(e, charList, arrSize)) continue;
+            if (!e || !e->isAlive() || alreadyPicked(e, charList, arrSize)) continue; // already picked is used to not just pick the same enemy 10 times
             int hp = e->getHealth();
             if (hp > highestHP) {
                 highestHP = hp;
@@ -221,16 +227,19 @@ int Player::findTopNMaxHealth(Melee** enemies, int mCount, Ranged** renemies, in
 
 void Player::castAOE(Melee** enemies, Ranged** renemies, int N, Camera& cam, GamesEngineeringBase::Window& canvas)
 {
-    if (aoeCDTim > 0.f) return;
-    if (powerup) {
+    if (aoeCDTim > 0.f) return; // Check cooldown
+    if (powerup) { // Shoot double the amount of enemies if powerup is active
         N *= 2;
     }
+
+    // This section uses the onScreen helper function to create arrays of ranged + melee enemies that are actually on screen
 
     Melee* marr[enemySize];
     int mCount = 0;
     Ranged* rarr[enemySize];
     int rCount = 0;
 
+    // Parse the main enemy arrays and add them to the onscreen arrays 
     for (int i = 0; i < enemySize; i++) {
         Melee* e = enemies[i];
         if (e && e->isAlive() && onScreen(e->getX(), e->getY(), e->image.width, e->image.height, cam, canvas)) {
@@ -247,22 +256,63 @@ void Player::castAOE(Melee** enemies, Ranged** renemies, int N, Camera& cam, Gam
         }   
     }
 
+    // Make a character array of 20 spaces (10 or 20 needed based on if powerup is active
+    // Character used since theres going to be both melee and ranged classes inside
+
     Character* targets[20];
     int targetsLength = findTopNMaxHealth(marr, mCount, rarr, rCount, targets, N);
+    // Pass targets through N top max health helper function and damage all the enemies inside
     for (int i = 0; i < targetsLength; i++) {
         targets[i]->takeDamage(damage * 2);
     }
     aoeCDTim = aoeCD;
 }
 
-void Player::playerMovement(int x, int y, World& w) {
-    posX += x;
+void Player::playerMovement(float x, float y, World& w) {
+    /*posX += x;
     posY += y;
 
     if (posX < 0) posX = 0;
     if (posY < 0) posY = 0;
     if (posX + image.width > w.getWorldWidth()) posX = w.getWorldWidth() - image.width;
-    if (posY + image.height > w.getWorldHeight()) posY = w.getWorldHeight() - image.height;
+    if (posY + image.height > w.getWorldHeight()) posY = w.getWorldHeight() - image.height;*/
+
+    if (x != 0) {
+        int stepX = (x > 0) ? 1 : -1;
+        for (int i = 0; i < std::abs(x); ++i) {
+            int tryX = posX + stepX;
+
+            // clamp within world
+            if (tryX < 0) tryX = 0;
+            if (tryX + image.width > w.getWorldWidth())
+                tryX = w.getWorldWidth() - image.width;
+
+            // only commit if walkable (not water)
+            if (w.isWalkableRect(tryX, posY, image.width, image.height))
+                posX = tryX;
+            else
+                break; // hit water — stop horizontal movement
+        }
+    }
+
+    // --- Move along Y axis ---
+    if (y != 0) {
+        int stepY = (y > 0) ? 1 : -1;
+        for (int i = 0; i < std::abs(y); ++i) {
+            int tryY = posY + stepY;
+
+            // clamp within world
+            if (tryY < 0) tryY = 0;
+            if (tryY + image.height > w.getWorldHeight())
+                tryY = w.getWorldHeight() - image.height;
+
+            // only commit if walkable (not water)
+            if (w.isWalkableRect(posX, tryY, image.width, image.height))
+                posY = tryY;
+            else
+                break; // hit water — stop vertical movement
+        }
+    }
 }
 
 
@@ -297,10 +347,10 @@ void Player::update(float dt, int x, int y, World& w) {
         } 
     }
 
-    float newX = x * dt * 60.f;
-    float newY = y * dt * 60.f;
+    float newX = x * dt * 60;
+    float newY = y * dt * 60;
 
-    playerMovement(newX, newY, w); // Move the player
+    playerMovement(newX, newY, w); // Move the player (specific playermovement function as the player has to not go on water + not leave the map bounds)
 
 }
 

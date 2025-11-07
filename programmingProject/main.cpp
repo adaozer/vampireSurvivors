@@ -5,6 +5,11 @@
 #include "Helper.h"
 #include "World.h"
 
+
+// Helper: parse CSV, player: player movement
+// World, Tiles, Main
+
+
 int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -25,6 +30,8 @@ int main() {
     TileSet tiles;
     World w;
     w.loadUsingFile("Resources/tiles.txt");
+    w.buildCollisionLayer();
+    float fpsPrint = 0.f;
 
     while (running)
     {
@@ -33,6 +40,8 @@ int main() {
         canvas.clear();
 
         float dt = tim.dt();
+        float fps = 1.0f / dt;
+        fpsPrint += dt;
         int x = 0;
         int y = 0;
 
@@ -56,6 +65,11 @@ int main() {
         p.checkBulletEnemyCollision(em.enemyarr, em.rangedarr);
         em.update(canvas, dt, p, cam, w);
         p.draw(canvas, cam);
+
+        if (fpsPrint > 1.0f) {
+            std::cout << "FPS: " << fps << std::endl;
+            fpsPrint = 0.f;
+        }
 
         if (!p.isAlive()) {
             std::cout << "GAME OVER!" << " Your score is " << score << std::endl;

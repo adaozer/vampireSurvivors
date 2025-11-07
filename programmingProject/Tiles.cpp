@@ -4,19 +4,13 @@
 
 Tile::Tile() {}
 
-bool Tile::load(std::string filename) {
-    loaded = image.load(filename);
-    if (!loaded) {
-        std::cerr << "[Tile] Failed to load: " << filename << "\n";
-    }
-    return loaded;
+void Tile::load(std::string filename) {
+    image.load(filename);
 }
 
 void Tile::draw(GamesEngineeringBase::Window& canvas, int x, int y, Camera& cam) {
-    if (!loaded) return; // guard crash if missing image
-
-    int dx = x - static_cast<int>(cam.getX());
-    int dy = y - static_cast<int>(cam.getY());
+    int dx = x - (int)cam.getX();
+    int dy = y - (int)cam.getY();
 
     for (int i = 0; i < image.width; ++i) {
         int cx = dx + i;
@@ -36,11 +30,9 @@ int Tile::getWidth() { return image.width; }
 GamesEngineeringBase::Image& Tile::getSprite() { return image; }
 
 TileSet::TileSet(std::string pre) {
-    for (unsigned int i = 0; i < tileNum; ++i) {
-        const std::string filename = "Resources/" + pre + std::to_string(i) + ".png";
-        if (!t[i].load(filename)) {
-            std::cerr << "[TileSet] Missing tile " << i << " -> " << filename << "\n";
-        }
+    for (int i = 0; i < tileNum; i++) {
+        std::string filename = "Resources/" + pre + std::to_string(i) + ".png";
+        t[i].load(filename);
     }
 }
 

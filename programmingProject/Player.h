@@ -50,7 +50,7 @@ public:
 
     void checkBulletEnemyCollision(Melee** enemies, Ranged** ranged);
 
-    void playerMovement(int x, int y, World& w);
+    void playerMovement(float x, float y, World& w);
 
     void update(float dt, int x, int y, World& w);
 };

@@ -9,10 +9,10 @@ class Camera;
 
 class EnemyManager {
 public:
-    float timeElapsed = 0.f;
-    Melee* enemyarr[enemySize];
+    float timeElapsed = 0.f; // To spawn enemies
+    Melee* enemyarr[enemySize]; // Arrays for the 2 enemy types
     Ranged* rangedarr[enemySize];
-    float createThreshold = 2.f;
+    float createThreshold = 2.f; // This is how often we'll be spawning enemies (will go down slowly)
 
     EnemyManager();
     Position determineEnemyPos(Camera& cam, GamesEngineeringBase::Window& canvas);

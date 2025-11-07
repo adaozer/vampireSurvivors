@@ -22,6 +22,7 @@ void Ranged::draw(GamesEngineeringBase::Window& canvas, Camera& cam) {
 }
 
 void Ranged::shoot(Player& p) {
+    // Creates a bullet that shoots toward the player. Basically just makes an object at the first null space found.
     float px = p.getX();
     float py = p.getY();
     for (int i = 0; i < bulletSize; ++i) {
@@ -34,24 +35,25 @@ void Ranged::shoot(Player& p) {
 
 void Ranged::update(float dt, Player& p, GamesEngineeringBase::Window& canvas, Camera& cam) {
     if (!alive) return;
-
+    // Shoots every x seconds
     shootTimer -= dt;
     if (shootTimer <= 0.0f) {
         shoot(p);
         shootTimer = shootingSpeed;
     }
 
+    // Updates its bullets in the array
     for (int i = 0; i < bulletSize; ++i) {
         Bullet* b = enemyBarr[i];
         if (!b) continue;
-        b->update(dt, p);
-        if (!b->alive) {
+        b->update(dt, p, canvas, cam);
+        if (!b->alive) { // Free up space if the bullet isn't live anymore
             delete b;
             enemyBarr[i] = nullptr;
         }
         else {
             if (onScreen(b->getX() - b->radius, b->getY() - b->radius, b->radius * 2, b->radius * 2, cam, canvas)) {
-                b->draw(canvas, cam);
+                b->draw(canvas, cam); // Draw the bullets if they're on screen
             }
         }
     }

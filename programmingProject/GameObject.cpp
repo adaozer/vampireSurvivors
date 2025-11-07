@@ -8,6 +8,7 @@ GameObject::GameObject(float _posX, float _posY, std::string filename) : posX(_p
 GameObject::GameObject(float _posX, float _posY) : posX(_posX), posY(_posY) {}
 
 void GameObject::updatePos(float _posX, float _posY) {
+    // Update position function to move stuff on the screen
         posX += _posX;
         posY += _posY;
     }
