@@ -4,7 +4,14 @@
 #include "Bullet.h"
 
 Player::Player(float _posX, float _posY, std::string filepath, int _health, int _speed, int _damage) : Character(_posX, _posY, filepath, _health, _speed, _damage) {
-    for (int i = 0; i < bulletSize; i++) barr[i] = nullptr;
+    for (int i = 0; i < bulletSize; i++) 
+        barr[i] = nullptr;
+}
+
+Player::~Player() {
+    for (int i = 0; i < bulletSize; i++)
+        if (barr[i])
+            delete barr[i];
 }
 
 int Player::findNearestEnemyIndex(Melee** enemies, Ranged** renemies, bool& pickRanged) {

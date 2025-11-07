@@ -17,7 +17,7 @@ int main() {
     canvas.create(1024, 768, "Vampire Survivors"); // Create the window
 
     int mode;
-    std::cout << "Pick gamemode \n 1: Infinite map\n 2: Finite map\n"; // Mode selection through the console
+    std::cout << "Pick gamemode \n 1: Finite map\n 2: Infinite map\n"; // Mode selection through the console
     std::cin >> mode;
 
     bool running = true;

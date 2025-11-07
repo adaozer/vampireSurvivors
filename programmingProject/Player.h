@@ -30,6 +30,8 @@ public:
 
     Player(float _posX, float _posY, std::string filepath, int _health, int _speed, int _damage);
 
+    ~Player();
+
     int findNearestEnemyIndex(Melee** enemies, Ranged** renemies, bool& pickRanged);
 
     bool alreadyPicked(Character* c, Character** charList, int arrSize);

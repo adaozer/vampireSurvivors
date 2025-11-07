@@ -15,6 +15,7 @@ public:
     float createThreshold = 2.f; // This is how often we'll be spawning enemies (will go down slowly)
 
     EnemyManager();
+    ~EnemyManager();
     Position determineEnemyPos(Camera& cam, GamesEngineeringBase::Window& canvas);
     void spawnEnemy(GamesEngineeringBase::Window& canvas, Camera& cam, World& w);
     void update(GamesEngineeringBase::Window& canvas, float dt, Player& p, Camera& cam, World& w);

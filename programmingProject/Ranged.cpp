@@ -9,6 +9,12 @@ Ranged::Ranged(float _posX, float _posY, std::string filepath, int _health, int 
 
 }
 
+Ranged::~Ranged() {
+    for (int i = 0; i < bulletSize; i++)
+        if (enemyBarr[i])
+            delete enemyBarr[i];
+}
+
 void Ranged::draw(GamesEngineeringBase::Window& canvas, Camera& cam) {
     int ix = (int)(posX - cam.getX());
     int iy = (int)(posY - cam.getY());

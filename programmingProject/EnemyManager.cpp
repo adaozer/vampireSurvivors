@@ -10,6 +10,15 @@ EnemyManager::EnemyManager() {
     }
 }
 
+EnemyManager::~EnemyManager() {
+    for (int i = 0; i < enemySize; i++) {
+        if (enemyarr[i])
+            delete enemyarr[i];
+        if (rangedarr[i])
+            delete rangedarr[i];
+    }
+}
+
 Position EnemyManager::determineEnemyPos(Camera& cam, GamesEngineeringBase::Window& canvas) {
     Position positions; // Struct that is just int x, int y
     int posX, posY;

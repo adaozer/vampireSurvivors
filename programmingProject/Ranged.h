@@ -14,6 +14,8 @@ public:
 
     Ranged(float _posX, float _posY, std::string filepath, int _health, int _speed, int _damage);
 
+    ~Ranged();
+
     void draw(GamesEngineeringBase::Window& canvas, Camera& cam);
 
     void shoot(Player& p);
