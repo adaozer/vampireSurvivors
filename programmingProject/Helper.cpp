@@ -17,42 +17,22 @@ bool onScreen(float x, float y, float w, float h, Camera& cam, const GamesEngine
     return (sx + w >= 0 && sy + h >= 0 && sx <= canvas.getWidth() && sy <= canvas.getHeight());
 }
 
-std::string clearSpaces(std::string& s) {
-    // This is to clear the spaces to the left of a line when reading a file
-    int i = 0;
-    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) // If a space is found, increment i by 1.
-        i++;
-    return s.substr(i); // When spaces end (on the left side) create a substring starting from i
-}
-
-bool isEmpty(std::string& s) {
-    // Check if a line is empty when reading a file
-    std::string s_new = clearSpaces(s); // Clear the spaces, and if the line is empty that means it was already empty (or just full of spaces)
-    if (s_new.empty()) return true;
-    return false;
- }
-
 bool firstWord(std::string& line, const char* word) {
     // Check the first word in a line
     // The output is a check of matching, not a check of what the first word is exactly
-    std::string s_clean = clearSpaces(line); // Clean the start so we don't get spaces before the first word
     int i = 0;
-    while (word[i] && i < s_clean.size() && s_clean[i] == word[i]) // We increment i if its following the letter order of our word we inputted
+    while (word[i] && i < line.size() && line[i] == word[i]) // We increment i if its following the letter order of our word we inputted
         i++;
     if (word[i] == '\0') return true; // If the last space is \0 (final character) it must be equal to the same word
     return false;
 }
 
-bool parseCSV(std::string line, int* output, int tiles) {
-    for (char& c : line) 
-        if (c == ',') 
-            c = ' ';
-    std::istringstream iss(line);
-    for (unsigned i = 0; i < tiles; ++i)
-        if (!(iss >> output[i])) return false;
-    int dummy;
-    if (iss >> dummy) return false;
-    return true;
+void parseCSV(std::string line, int* output, int tiles) {
+    for (char& c : line) // For char in line, replace commas with spaces
+        if (c == ',') c = ' ';
+    std::istringstream iss(line); // Make an istringstream to read the characters between the spaces (in our case the values in our csv)
+    for (int i = 0; i < tiles; i++)
+        iss >> output[i];
 }
 
 int score = 0;

@@ -10,7 +10,7 @@ EnemyManager::EnemyManager() {
     }
 }
 
-EnemyManager::~EnemyManager() {
+EnemyManager::~EnemyManager() { // Destructor for the arrays of enemies
     for (int i = 0; i < enemySize; i++) {
         if (enemyarr[i])
             delete enemyarr[i];
@@ -83,12 +83,14 @@ void EnemyManager::spawnEnemy(GamesEngineeringBase::Window& canvas, Camera& cam,
         enemyarr[emptySlot] = new Melee(posX, posY, "Resources/enemy4.png", 50, 1, 15);
         break;
     case 4:
-        while (!w.inBounds(posX, posY)) {
-            // Melee enemies spawning out of bounds is fine as they'll come to the player. However ranged enemies can't move and the player can't shoot what they can't see.
-            // Because of this, we keep picking a new random position until we find one that is in the map bounds (but not in the camera bounds)
-            Position newPos = determineEnemyPos(cam, canvas);
-            posX = newPos.x;
-            posY = newPos.y;
+        if (mode == 1) { // Only for finite map
+            while (!w.inBounds(posX, posY)) {
+                // Melee enemies spawning out of bounds is fine as they'll come to the player. However ranged enemies can't move and the player can't shoot what they can't see.
+                // Because of this, we keep picking a new random position until we find one that is in the map bounds (but not in the camera bounds)
+                Position newPos = determineEnemyPos(cam, canvas);
+                posX = newPos.x;
+                posY = newPos.y;
+            }
         }
             rangedarr[emptySlot] = new Ranged(posX, posY, "Resources/rangedEnemy.png", 10, 0, 25);
             break;

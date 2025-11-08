@@ -9,7 +9,7 @@ Ranged::Ranged(float _posX, float _posY, std::string filepath, int _health, int 
 
 }
 
-Ranged::~Ranged() {
+Ranged::~Ranged() { // Destructor for the bullet arrays of the ranged enemies
     for (int i = 0; i < bulletSize; i++)
         if (enemyBarr[i])
             delete enemyBarr[i];

@@ -10,10 +10,6 @@ public:
 
 	void load(std::string filename);
 	void draw(GamesEngineeringBase::Window &canvas, int x, int y, Camera &cam);
-
-	int getHeight();
-	int getWidth();
-	GamesEngineeringBase::Image& getSprite();
 };
 
 class TileSet {

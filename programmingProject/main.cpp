@@ -4,12 +4,7 @@
 #include "Camera.h"
 #include "Helper.h"
 #include "World.h"
-
-
-// Helper: parse CSV, player: player movement
-// World, Tiles
-
-
+// draw, draw infinite, iswalkableinfinite, tileatinfinite, BUGLAR: Infinite dünyada bazi sularin collisioni tuhaf + player bi yerden sonra auto atmayi kesiyo
 int main() {
     srand(static_cast<unsigned int>(time(nullptr))); // So random spawning works properly
 
@@ -59,7 +54,7 @@ int main() {
         p.update(dt, x, y, w); // All the update functions. Update player position and cooldowns here
         cam.center(p.getX(), p.getY(), canvas, w); // Center the camera
         if (mode == 1) w.draw(canvas, cam, tiles);  // Draw tiles as the camera moves
-        if (mode == 2) w.drawInfinite(canvas, cam, tiles);
+        if (mode == 2) w.drawInfinite(canvas, cam, tiles); // Different draw function if infinite world is selected
         p.autoAttack(em.enemyarr, em.rangedarr, cam, canvas); // Player auto attack
         p.updateBullets(dt, canvas, cam); // Move the bullets
         p.checkBulletEnemyCollision(em.enemyarr, em.rangedarr); // Check if the bullets hit a target

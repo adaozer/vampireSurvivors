@@ -8,7 +8,7 @@ Player::Player(float _posX, float _posY, std::string filepath, int _health, int 
         barr[i] = nullptr;
 }
 
-Player::~Player() {
+Player::~Player() { // Destructor to get rid of the bullet array
     for (int i = 0; i < bulletSize; i++)
         if (barr[i])
             delete barr[i];
@@ -276,39 +276,38 @@ void Player::castAOE(Melee** enemies, Ranged** renemies, int N, Camera& cam, Gam
 }
 
 void Player::playerMovement(float x, float y, World& w) {
-    float oldX = posX;
+    float initialX = posX; // To make sure that we are not walking on water, we use a try/error type function
     posX += x;
 
-    if (mode == 2) {
-        if (!w.isWalkableInfinite((int)posX, (int)posY, image.width, image.height)) {
-            posX = oldX;
+    if (mode == 2) { // Specific water check if the infinite map is selected
+        if (!w.isWalkableInfinite(posX, posY, image.width, image.height)) {
+            posX = initialX; // If its not walkable, roll back X.
         }
     }
-    else { 
+    else {  // If its the finite map, we just do some clamping so we don't go past the tiles.
         if (posX < 0) posX = 0;
-        float maxX = w.getWorldWidth() - image.width;
-        if (posX > maxX) posX = maxX;
+        if (posX > w.getWorldWidth() - image.width) posX = w.getWorldWidth() - image.width;
 
-        if (!w.isWalkableRect((int)posX, (int)posY, image.width, image.height)) {
-            posX = oldX;
+        if (!w.isWalkableRect(posX, posY, image.width, image.height)) {
+            posX = initialX; // Specific water tile search function for the finite map, once again we roll back the X if it was water
         }
     }
-
-    float oldY = posY;
+    // Do the same for Y
+    float initialY = posY;
     posY += y;
-
+    // Checking seperately for X and Y makes the movement feel more smooth as checking for X and Y at once means 
+    // holding 2 directions at once while moving near water will just make the character completely stop moving instead of just not go in the water
     if (mode == 2) {
-        if (!w.isWalkableInfinite((int)posX, (int)posY, image.width, image.height)) {
-            posY = oldY;
+        if (!w.isWalkableInfinite(posX, posY, image.width, image.height)) {
+            posY = initialY;
         }
     }
-    else {
+    else { // Clamp if finite
         if (posY < 0) posY = 0;
-        float maxY = w.getWorldHeight() - image.height;
-        if (posY > maxY) posY = maxY;
+        if (posY > w.getWorldHeight() - image.height) posY = w.getWorldHeight() - image.height;
 
-        if (!w.isWalkableRect((int)posX, (int)posY, image.width, image.height)) {
-            posY = oldY;
+        if (!w.isWalkableRect(posX, posY, image.width, image.height)) {
+            posY = initialY;
         }
     }
 }

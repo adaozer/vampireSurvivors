@@ -1,130 +1,96 @@
 #include "World.h"
 #include "Camera.h"
 
-World::World() {
+World::World() { // Initialise map  array
 	for (int y = 0; y < worldMaxH; y++)
 		for (int x = 0; x < worldMaxW; x++) {
 			map[y][x] = 0;
 		}
 }
 
-bool World::loadUsingFile(const std::string& filename) {
-    std::ifstream f(filename);
-    if (!f.good()) return false;
+void World::loadUsingFile(const std::string& filename) {
+    std::ifstream f(filename); // Open the file for reading
 
-    int W = -1, H = -1, tw = -1, th = -1;
-    bool inLayer = false;
-    unsigned rowsRead = 0;
+    bool inLayer = false;  // Whether we're reading the part that starts after "Layer 0", AKA the tile and map width height info is done
+    int rowsRead = 0; // Row read tracker to make sure we read the amount of rows specified by tilehigh.
 
-    std::string line;
-    while (std::getline(f, line)) {
-        if (isEmpty(line)) continue;
+    std::string line; // Read line by line
+    while (std::getline(f, line)) { // While there are lines to read
+        if (line.empty()) continue; // Skip empty lines
 
-        if (!inLayer) {
-            std::string s = clearSpaces(line);
-
-            if (firstWord(s, "tileswide")) {
-                std::istringstream iss(s);
-                std::string key; iss >> key >> W;
+        if (!inLayer) { // Before the layers start we get the variable information
+            if (firstWord(line, "tileswide")) { // Check if the first word is X (tileswide here)
+                std::istringstream iss(line); // Use an istringstream to read it easily
+                std::string key; 
+                iss >> key >> tileswide; // First we read the key (tileswide) then the value (42)
                 continue;
             }
-            if (firstWord(s, "tileshigh")) {
-                std::istringstream iss(s);
-                std::string key; iss >> key >> H;
+            if (firstWord(line, "tileshigh")) { // Repeat for everything else
+                std::istringstream iss(line);
+                std::string key; iss >> key >> tileshigh;
                 continue;
             }
-            if (firstWord(s, "tilewidth")) {
-                std::istringstream iss(s);
-                std::string key; iss >> key >> tw;
+            if (firstWord(line, "tilewidth")) {
+                std::istringstream iss(line);
+                std::string key; iss >> key >> tilewidth;
                 continue;
             }
-            if (firstWord(s, "tileheight")) {
-                std::istringstream iss(s);
-                std::string key; iss >> key >> th;
+            if (firstWord(line, "tileheight")) {
+                std::istringstream iss(line);
+                std::string key; iss >> key >> tileheight;
                 continue;
             }
-            if (firstWord(s, "layer")) {
-                // Sanity checks before reading grid
-                if (W <= 0 || H <= 0) return false;
-                if (W > static_cast<int>(worldMaxW) || H > static_cast<int>(worldMaxH)) return false;
-                if (tw <= 0 || th <= 0) return false;
-
-                tileswide = W;
-                tileshigh = H;
-                tilewidth = tw;
-                tileheight = th;
-
+            if (firstWord(line, "layer")) { // The layer starts
                 inLayer = true;
-                rowsRead = 0;
                 continue;
             }
-
-            continue;
         }
 
-        // Layer phase: read exactly `height` rows with exactly `width` ints each.
-        if (rowsRead >= tileshigh) break;
+        if (rowsRead >= tileshigh) break; // Make sure we read the right amount of rows
 
         int vals[worldMaxW];
-        if (!parseCSV(line, vals, static_cast<int>(tileswide))) {
-            // Allow blank/comment lines inside the layer (skip), else fail
-            if (isEmpty(line)) continue;
-            return false;
-        }
+        parseCSV(line, vals, tileswide); // Parse the csv, add the CSV values to vals.
 
-        // Clamp to valid tile ID range [0, tileNum-1]
-        for (unsigned x = 0; x < tileswide; ++x) {
-            int v = vals[x];
-            if (v < 0) v = 0;
-            if (v >= static_cast<int>(tileNum)) v = static_cast<int>(tileNum) - 1;
-            map[rowsRead][x] = v;
+        // Parse the rows and put the values in vals into maps at the correct positions
+        for (int i = 0; i < tileswide; i++) {
+            int v = vals[i];
+            map[rowsRead][i] = v; // Row, value format
         }
-        ++rowsRead;
+        rowsRead++; // Increment the rows read after a rows been read
     }
 
-    // Success only if we actually entered layer data and read all rows.
-    return (inLayer && rowsRead == tileshigh);
+    if (rowsRead == tileshigh) return; // Return after all the rows have been read
 }
 
-void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tiles)
-{
-    if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return;
+void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tileset) {
+    if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return; // Quick check in case we haven't read the values correctly
 
-    const int camX = (int)cam.getX();
-    const int camY = (int)cam.getY();
-    const int screenW = (int)canvas.getWidth();
-    const int screenH = (int)canvas.getHeight();
+    int minTileX = cam.getX() / tilewidth;
+    int minTileY = cam.getY() / tileheight;
 
-    // start with truncating division
-    int minTileX = camX / tilewidth;
-    int minTileY = camY / tileheight;
+    if (cam.getX() < 0 && ((int)cam.getX() % tilewidth))  minTileX--;
+    if (cam.getY() < 0 && ((int)cam.getY() % tileheight)) minTileY--;
 
-    // adjust for negatives to emulate floor division
-    if (camX < 0 && (camX % tilewidth))  --minTileX;
-    if (camY < 0 && (camY % tileheight)) --minTileY;
+    int maxTileX = (cam.getX() + canvas.getWidth() + tilewidth - 1) / tilewidth;
+    int maxTileY = (cam.getY() + canvas.getHeight() + tileheight - 1) / tileheight;
 
-    // ceil for the far edge
-    int maxTileX = (camX + screenW + tilewidth - 1) / tilewidth;
-    int maxTileY = (camY + screenH + tileheight - 1) / tileheight;
-
-    // clamp to map bounds
     if (minTileX < 0) minTileX = 0;
     if (minTileY < 0) minTileY = 0;
-    if (maxTileX > tileswide)  maxTileX = tileswide;
-    if (maxTileY > tileshigh)  maxTileY = tileshigh;
+    if (maxTileX > tileswide) maxTileX = tileswide;
+    if (maxTileY > tileshigh) maxTileY = tileshigh;
 
-    for (int ty = minTileY; ty < maxTileY; ++ty) {
-        for (int tx = minTileX; tx < maxTileX; ++tx) {
-            const int id = map[ty][tx];
-            const int worldX = tx * tilewidth;
-            const int worldY = ty * tileheight;
-            tiles[(unsigned)id].draw(canvas, worldX, worldY, cam);
+    for (int ty = minTileY; ty < maxTileY; ty++) {
+        for (int tx = minTileX; tx < maxTileX; tx++) {
+            int id = map[ty][tx];
+            int worldX = tx * tilewidth;
+            int worldY = ty * tileheight;
+            tileset[id].draw(canvas, worldX, worldY, cam);
         }
     }
 }
 
-void World::drawInfinite(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tiles) {
-    if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return;
+void World::drawInfinite(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tileset) {
+    if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return;  // Quick check in case we haven't read the values correctly
 
     int firstTx = static_cast<int>(std::floor(cam.getX() / tilewidth)) - 1;
     int lastTx = static_cast<int>(std::floor((cam.getX() + canvas.getWidth()) / tilewidth)) + 1;
@@ -134,46 +100,37 @@ void World::drawInfinite(GamesEngineeringBase::Window& canvas, Camera& cam, Tile
     for (int ty = firstTy; ty <= lastTy; ++ty) {
         for (int tx = firstTx; tx <= lastTx; ++tx) {
             unsigned id = tileAtInfinite(tx, ty);
-            tiles[id].draw(canvas, tx * tilewidth, ty * tileheight, cam);
+            tileset[id].draw(canvas, tx * tilewidth, ty * tileheight, cam);
         }
     }
 }
 
 
-void World::collisionLayer()
-{
-    for (int ty = 0; ty < tileshigh; ++ty) {
-        for (int tx = 0; tx < tileswide; ++tx) {
-            int id = map[ty][tx];
-
-            // Mark water tiles (IDs 14–22) as blocked
-            // You can change this range if your tileset differs
-            blockedCell[ty][tx] = (id >= 14 && id <= 22);
+void World::collisionLayer() {
+    // Build the collision map
+    for (int y = 0; y < tileshigh; y++) {
+        for (int x = 0; x < tileswide; x++) {
+            int tileNo = map[y][x]; // Check the number of the tile at that spot
+            blockedTile[y][x] = (tileNo >= 14 && tileNo <= 22); // If the tile is 14 - 22 its blocked so put true in the blocked cell array
+            // Its very hard coded, it works because tiles 14 to 22 on the tile pngs are water.
         }
     }
 }
 
-bool World::isWalkablePixel(int px, int py)
-{
-    if (!inBounds(px, py)) return false;
+bool World::isWalkablePixel(int px, int py) {
+    // Helper function for "isWalkableRect"
+    int tx = px / tilewidth; // Find out the index of the tile we are on. We know each tile is 32x32, so by dividing pixel's X with 32 we can get the index we are on
+    int ty = py / tileheight; // Same for the Y value
 
-    int tx = px / tilewidth;
-    int ty = py / tileheight;
-
-    if (tx < 0 || ty < 0 || tx >= tileswide || ty >= tileshigh)
-        return false;
-
-    // true means blocked, so we return the opposite
-    return !blockedCell[ty][tx];
+    return !blockedTile[ty][tx]; // Reference the index of our tile with the blocked cell array. True = Blocked so we return the opposite to see if its walkable
 }
 
-bool World::isWalkableRect(int x, int y, int w, int h)
-{
-    // Check 4 corners of the player's bounding box
-    return isWalkablePixel(x, y) &&
-        isWalkablePixel(x + w - 1, y) &&
-        isWalkablePixel(x, y + h - 1) &&
-        isWalkablePixel(x + w - 1, y + h - 1);
+bool World::isWalkableRect(int x, int y, int w, int h) {
+    // x and y are the player's x and y, w and h are the player's sprite's width and height.
+    // First, the actual x and y of the player (top left corner), then the top right corner (add the width of the sprite to the top left value (x).
+    // Then, the bottom left of the sprite (add the height of the sprite to the Y) then finally the bottom right (add sprite's width and height to X and Y)
+    // The sprite is 32x32 and so are the tiles so we can get accurate information here. Also, the -1's are required as otherwise it spills into the next tile (0, 31 for each tile)
+    return isWalkablePixel(x, y) && isWalkablePixel(x + w - 1, y) && isWalkablePixel(x, y + h - 1) && isWalkablePixel(x + w - 1, y + h - 1);
 } 
 
 bool World::isWalkableInfinite(int x, int y, int w, int h) {
@@ -185,44 +142,28 @@ bool World::isWalkableInfinite(int x, int y, int w, int h) {
 
     for (int yi = 0; yi < 2; ++yi) {
         for (int xi = 0; xi < 2; ++xi) {
-            int tx = static_cast<int>(xs[xi]) / tilewidth;
-            int ty = static_cast<int>(ys[yi]) / tileheight;
+            int tx = (int)xs[xi] / tilewidth;
+            int ty = (int)ys[yi] / tileheight;
 
-            // sampler is non-const in your file; const_cast to reuse it
             unsigned id = const_cast<World*>(this)->tileAtInfinite(tx, ty);
 
-            if (id >= 14 && id <= 22)  // water range
+            if (id >= 14 && id <= 22)
                 return false;
         }
     }
     return true;
 }
 
-int World::getWorldWidth() { return tileswide * tilewidth; }
-int World::getWorldHeight() { return tileshigh * tileheight; }
-
-bool World::inBoundsIndex(int tx, int ty) {
-    if (tx >= 0 && ty >= 0 && tx < tileswide && ty < tileshigh) return true;
-    return false;
-}
+int World::getWorldWidth() { return tileswide * tilewidth; } // Get world width by multiplying the dimensions of tiles and how many tiles there is. In this case this is 42x32.
+int World::getWorldHeight() { return tileshigh * tileheight; } // Same for height
 
 bool World::inBounds(int x, int y) {
+    // This is a simple in bounds check to use for clamping camera, player movement etc. Checks if x and y are above 0 and the world's width/height.
     if (x >= 0 && y >= 0 && x < getWorldWidth() && y < getWorldHeight()) return true;
     return false;
 }
 
-int World::tileOperator(int tx, int ty) {
-    if (!inBoundsIndex(tx, ty)) return -1;
-    return map[ty][tx];
-}
-
-// NEW: finite + wrapped samplers
-unsigned int World::tileAtFinite(int tx, int ty) {
-    if (!inBoundsIndex(tx, ty)) return 0;
-    return (unsigned)map[ty][tx];
-}
-unsigned int World::tileAtInfinite(int tx, int ty) {
-    // safe mod for negatives; guard 0 to avoid UB if not loaded
+int World::tileAtInfinite(int tx, int ty) {
     int w = tileswide > 0 ? tileswide : 1;
     int h = tileshigh > 0 ? tileshigh : 1;
     int wx = tx % w; if (wx < 0) wx += w;
