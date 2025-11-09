@@ -65,26 +65,30 @@ void World::loadUsingFile(const std::string& filename) {
 void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tileset) {
     if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return; // Quick check in case we haven't read the values correctly
 
-    int minTileX = cam.getX() / tilewidth;
-    int minTileY = cam.getY() / tileheight;
+    int minTileX = cam.getX() / tilewidth; // Divide the cam's X (top left of the screen) by 32, and we get the index of the leftmost tile
+    int minTileY = cam.getY() / tileheight; // Same for the upmost tile
 
+    // This is to fix the result of the division in case of floats and negative coordinates. Basically we need // (floor) division
     if (cam.getX() < 0 && ((int)cam.getX() % tilewidth))  minTileX--;
-    if (cam.getY() < 0 && ((int)cam.getY() % tileheight)) minTileY--;
+    if (cam.getY() < 0 && ((int)cam.getY() % tileheight)) minTileY--; 
 
-    int maxTileX = (cam.getX() + canvas.getWidth() + tilewidth - 1) / tilewidth;
+    // We do the exact same thing for the index of the rightmost/bottommost tile.
+    int maxTileX = (cam.getX() + canvas.getWidth() + tilewidth - 1) / tilewidth; // Without the -1's here weird pixels form on the edges of the screen
     int maxTileY = (cam.getY() + canvas.getHeight() + tileheight - 1) / tileheight;
 
+    // Some clamping
     if (minTileX < 0) minTileX = 0;
     if (minTileY < 0) minTileY = 0;
     if (maxTileX > tileswide) maxTileX = tileswide;
     if (maxTileY > tileshigh) maxTileY = tileshigh;
 
+    // Simple loop going from the minimum tile's index to the maximum tile's index
     for (int ty = minTileY; ty < maxTileY; ty++) {
         for (int tx = minTileX; tx < maxTileX; tx++) {
-            int id = map[ty][tx];
-            int worldX = tx * tilewidth;
+            int id = map[ty][tx]; // Select tile id from the map[y][x] array
+            int worldX = tx * tilewidth; // Index of the tile * 32 pixels to find out its coordinates
             int worldY = ty * tileheight;
-            tileset[id].draw(canvas, worldX, worldY, cam);
+            tileset[id].draw(canvas, worldX, worldY, cam); // Regular draw
         }
     }
 }
@@ -92,19 +96,32 @@ void World::draw(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& til
 void World::drawInfinite(GamesEngineeringBase::Window& canvas, Camera& cam, TileSet& tileset) {
     if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0) return;  // Quick check in case we haven't read the values correctly
 
-    int firstTx = static_cast<int>(std::floor(cam.getX() / tilewidth)) - 1;
-    int lastTx = static_cast<int>(std::floor((cam.getX() + canvas.getWidth()) / tilewidth)) + 1;
-    int firstTy = static_cast<int>(std::floor(cam.getY() / tileheight)) - 1;
-    int lastTy = static_cast<int>(std::floor((cam.getY() + canvas.getHeight()) / tileheight)) + 1;
+    // Find leftmost tile just like regular draw
+    int minTileX = cam.getX() / tilewidth;
+    if (cam.getX() < 0 && ((int)cam.getX() % tilewidth)) minTileX--; // This is to make it like // division 
 
-    for (int ty = firstTy; ty <= lastTy; ++ty) {
-        for (int tx = firstTx; tx <= lastTx; ++tx) {
-            unsigned id = tileAtInfinite(tx, ty);
+    // This is for the topmost tile
+    int minTileY = cam.getY() / tileheight;
+    if (cam.getY() < 0 && ((int)cam.getY() % tileheight)) minTileY--;
+
+    // This is the topright tile
+    int maxTileX = (cam.getX() + canvas.getWidth() + tilewidth - 1) / tilewidth;
+    if ((cam.getX() + canvas.getWidth() + tilewidth - 1) < 0 && (((int)(cam.getX() + canvas.getWidth() + tilewidth - 1)) % tilewidth)) maxTileX--;
+
+
+    // This is the bottomright tile
+    int maxTileY = (cam.getY() + canvas.getHeight() + tileheight - 1) / tileheight;
+    if ((cam.getY() + canvas.getHeight() + tileheight - 1) < 0 && (((int)(cam.getY() + canvas.getHeight() + tileheight - 1)) % tileheight)) maxTileY--;
+ 
+
+    // Regular draw
+    for (int ty = minTileY; ty <= maxTileY; ty++) {
+        for (int tx = minTileX; tx <= maxTileX; tx++) {
+            int id = tileAtInfinite(tx, ty); // Instead of calling map[ty][tx] we call tileatInfinite which is a function that "normalises" the tile indices with the % operator
             tileset[id].draw(canvas, tx * tilewidth, ty * tileheight, cam);
         }
     }
 }
-
 
 void World::collisionLayer() {
     // Build the collision map
@@ -137,20 +154,31 @@ bool World::isWalkableInfinite(int x, int y, int w, int h) {
     if (tileswide == 0 || tileshigh == 0 || tilewidth == 0 || tileheight == 0)
         return true;
 
-    const float xs[2] = { x, x + w - 1 };
-    const float ys[2] = { y, y + h - 1 };
+    // Corner pixels
+    int px1 = x;             int py1 = y;              // TL
+    int px2 = x + w - 1;     int py2 = y;              // TR
+    int px3 = x;             int py3 = y + h - 1;      // BL
+    int px4 = x + w - 1;     int py4 = y + h - 1;      // BR
 
-    for (int yi = 0; yi < 2; ++yi) {
-        for (int xi = 0; xi < 2; ++xi) {
-            int tx = (int)xs[xi] / tilewidth;
-            int ty = (int)ys[yi] / tileheight;
+    // Convert to tile indices with FLOOR division (not trunc toward zero)
+    int tx1 = px1 / tilewidth;    if (px1 < 0 && (px1 % tilewidth)) --tx1;
+    int ty1 = py1 / tileheight;   if (py1 < 0 && (py1 % tileheight)) --ty1;
 
-            unsigned id = const_cast<World*>(this)->tileAtInfinite(tx, ty);
+    int tx2 = px2 / tilewidth;    if (px2 < 0 && (px2 % tilewidth)) --tx2;
+    int ty2 = py2 / tileheight;   if (py2 < 0 && (py2 % tileheight)) --ty2;
 
-            if (id >= 14 && id <= 22)
-                return false;
-        }
-    }
+    int tx3 = px3 / tilewidth;    if (px3 < 0 && (px3 % tilewidth)) --tx3;
+    int ty3 = py3 / tileheight;   if (py3 < 0 && (py3 % tileheight)) --ty3;
+
+    int tx4 = px4 / tilewidth;    if (px4 < 0 && (px4 % tilewidth)) --tx4;
+    int ty4 = py4 / tileheight;   if (py4 < 0 && (py4 % tileheight)) --ty4;
+
+    // Wrap via tileAtInfinite and block on water (14..22)
+    int id1 = tileAtInfinite(tx1, ty1); if (id1 >= 14 && id1 <= 22) return false;
+    int id2 = tileAtInfinite(tx2, ty2); if (id2 >= 14 && id2 <= 22) return false;
+    int id3 = tileAtInfinite(tx3, ty3); if (id3 >= 14 && id3 <= 22) return false;
+    int id4 = tileAtInfinite(tx4, ty4); if (id4 >= 14 && id4 <= 22) return false;
+
     return true;
 }
 
@@ -164,9 +192,14 @@ bool World::inBounds(int x, int y) {
 }
 
 int World::tileAtInfinite(int tx, int ty) {
-    int w = tileswide > 0 ? tileswide : 1;
-    int h = tileshigh > 0 ? tileshigh : 1;
-    int wx = tx % w; if (wx < 0) wx += w;
-    int wy = ty % h; if (wy < 0) wy += h;
-    return (unsigned)map[wy][wx];
+    // Because the world is repeating, we will have really large tile indices. We % by 42 to get the "normalised" tile index
+    int worldX = tx % tileswide;
+    int worldY = ty % tileshigh;
+
+    // This is to "normalise" negative indices. We add 42 to make it positive again and "wrap" around.
+    if (worldX < 0) worldX += tileswide;
+    if (worldY < 0) worldY += tileshigh;
+
+    // Return the value "0.png" etc, by using the proper normalised tile indices
+    return map[worldY][worldX];
 }
