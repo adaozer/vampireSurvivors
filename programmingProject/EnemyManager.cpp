@@ -25,20 +25,20 @@ Position EnemyManager::determineEnemyPos(Camera& cam, GamesEngineeringBase::Wind
     int side = rand() % 4; // Use a switch statement here, check which side of the player we want to spawn
     switch (side) {
     case 0:
-        posX = cam.getX() + canvas.getWidth() + 25; // Camera's x and y point to the top left of the screen. We add 25 to all these values to make them off screen
+        posX = cam.getX() + canvas.getWidth() + 40; // Camera's x and y point to the top left of the screen. We add 25 to all these values to make them off screen
         posY = cam.getY() + (rand() % canvas.getHeight()); // Pick a random y value based on canvas height so we don't spawn every enemy at the same height
         break;
     case 1: // Same things for the other directions
-        posX = cam.getX() - 25;
+        posX = cam.getX() - 40;
         posY = cam.getY() + (rand() % canvas.getHeight());
         break;
     case 2:
         posX = cam.getX() + (rand() % canvas.getWidth());
-        posY = cam.getY() - 25;
+        posY = cam.getY() - 40;
         break;
     case 3:
         posX = cam.getX() + (rand() % canvas.getWidth());
-        posY = cam.getY() + canvas.getHeight() + 25;
+        posY = cam.getY() + canvas.getHeight() + 40;
         break;
     }
     positions.x = posX;
