@@ -4,7 +4,7 @@
 #include "Camera.h"
 #include "Helper.h"
 #include "World.h"
-// iswalkableinfinite, BUGLAR: Infinite dünyada bazi sularin collisioni tuhaf + player bi yerden sonra auto atmayi kesiyo
+
 int main() {
     srand(static_cast<unsigned int>(time(nullptr))); // So random spawning works properly
 
